@@ -73,7 +73,7 @@ def main():
     # ☁️ Weather condition
     cloud_cover = get_cloud_cover3()    
 
-    print(f"[{now.strftime('%m-%d-%Y %H:%M:%S')}] Solar Elevation: {el:.2f}° Azimuth: {az:.1f}° Cloud Cover: {cloud_cover}%")
+    print(f"[{now.strftime('%m-%d-%Y %H:%M:%S %z')}] Solar Elevation: {el:.2f}° Azimuth: {az:.1f}° Cloud Cover: {cloud_cover}%")
    
    
     # 🚀 Trigger Homebridge webhook
