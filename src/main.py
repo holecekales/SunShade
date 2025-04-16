@@ -8,6 +8,7 @@ import pytz
 from dotenv import load_dotenv
 import os
 import time  # For the loop delay
+import argparse
 
 # Load environment variables from .env file
 load_dotenv()
@@ -94,12 +95,23 @@ def sun_observation():
         except Exception as e:
             print(f"⚠️  Solar Webhook OFF failed: {e}")
 
-# Main function to run the observation in a loop
+# Main function to handle the loop or single execution
 def main():
-    while True:
+    parser = argparse.ArgumentParser(description="Trigger homebridge based on solar elevation and azimuth.")
+    parser.add_argument(
+        "--t", type=int, help="Timeout in seconds for running the loop. If not provided, the program runs once and exits."
+    )
+    args = parser.parse_args()
+
+    if args.t:
+        # Run in a loop with the specified timeout
+        while True:
+            sun_observation()
+            print(f"⏳ Waiting for {args.t} seconds...")
+            time.sleep(args.t)
+    else:
+        # Run once and exit
         sun_observation()
-        print("⏳ Waiting for 5 minutes...")
-        time.sleep(300)  # Wait for 5 minutes (300 seconds)
 
 if __name__ == "__main__":
     main()
