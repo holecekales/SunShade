@@ -48,6 +48,18 @@ def get_cloud_cover():
         print(f"⚠️  Failed to get cloud cover: {e}")
         return 100  # Default to "very cloudy" if API fails
 
+def get_cloud_cover3():
+    url = f"https://api.openweathermap.org/data/3.0/onecall?lat={LATITUDE}&lon={LONGITUDE}&exclude=minutely,hourly,daily,alerts&appid={OWM_API_KEY}&units=metric"
+    try:
+        response = requests.get(url, timeout=5)
+        data = response.json()
+        clouds = data.get("current", {}).get("clouds", 100)
+        return clouds
+    except Exception as e:
+        print(f"⚠️  Failed to get One Call weather data: {e}")
+        return 100
+
+
 def main():
     # 🌍 Set up location
     city = LocationInfo(CITY_NAME, "USA", TIMEZONE, LATITUDE, LONGITUDE)
@@ -59,7 +71,7 @@ def main():
     az = azimuth(city.observer, now)
 
     # ☁️ Weather condition
-    cloud_cover = get_cloud_cover()    
+    cloud_cover = get_cloud_cover3()    
 
     print(f"[{now.strftime('%m-%d-%Y %H:%M:%S')}] Solar Elevation: {el:.2f}° Azimuth: {az:.1f}° Cloud Cover: {cloud_cover}%")
    
