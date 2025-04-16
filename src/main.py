@@ -19,7 +19,7 @@ TIMEZONE = "America/Los_Angeles"
 
 # 🔧 Config
 SUN_ANGLE_MIN = 10  # degrees
-SUN_ANGLE_MAX = 70  # degrees
+SUN_ANGLE_MAX = 43  # degrees
 AZIMUTH_MIN = 200  # degrees
 AZIMUTH_MAX = 310  # degrees
 CLOUD_COVER_THRESHOLD = 30  # % cloud cover max
