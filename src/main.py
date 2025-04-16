@@ -11,7 +11,7 @@ def main():
     # 📍 Location: Kirkland, WA
     CITY_NAME = "Kirkland"
     LATITUDE = 47.6858
-    LONGITUDE = -122.1917
+    LONGITUDE = -122.2087 #-122.1917 - align with the Weather Plus Plugin
     TIMEZONE = "America/Los_Angeles"
 
     # 🔧 Config
@@ -34,7 +34,7 @@ def main():
     # 🌅 Calculate solar elevation and azimuth
     el = elevation(city.observer, now)
     az = azimuth(city.observer, now)
-    print(f"[{now}] Solar Elevation: {el:.2f}° Azimuth: {az:.1f}°")
+    print(f"[{now.strftime('%m-%d-%Y %H:%M:%S')}] Solar Elevation: {el:.2f}° Azimuth: {az:.1f}°")
    
 
     # 🚀 Trigger Homebridge webhook
