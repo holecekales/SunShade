@@ -7,6 +7,7 @@ from math import degrees
 import pytz
 from dotenv import load_dotenv
 import os
+import time  # For the loop delay
 
 # Load environment variables from .env file
 load_dotenv()
@@ -59,8 +60,8 @@ def get_cloud_cover3():
         print(f"⚠️  Failed to get One Call weather data: {e}")
         return 100
 
-
-def main():
+# ☀️ Function to perform sun observation and trigger webhooks
+def sun_observation():
     # 🌍 Set up location
     city = LocationInfo(CITY_NAME, "USA", TIMEZONE, LATITUDE, LONGITUDE)
     tz = pytz.timezone(city.timezone)
@@ -75,9 +76,8 @@ def main():
 
     print(f"[{now.strftime('%m-%d-%Y %H:%M:%S %z')}] Solar Elevation: {el:.2f}° Azimuth: {az:.1f}° Cloud Cover: {cloud_cover}%")
    
-   
     # 🚀 Trigger Homebridge webhook
-    if(
+    if (
         SUN_ANGLE_MIN <= el <= SUN_ANGLE_MAX and
         AZIMUTH_MIN <= az <= AZIMUTH_MAX and
         cloud_cover <= CLOUD_COVER_THRESHOLD
@@ -93,6 +93,13 @@ def main():
             requests.get(WEBHOOK_OFF_URL, timeout=5)
         except Exception as e:
             print(f"⚠️  Solar Webhook OFF failed: {e}")
+
+# Main function to run the observation in a loop
+def main():
+    while True:
+        sun_observation()
+        print("⏳ Waiting for 5 minutes...")
+        time.sleep(300)  # Wait for 5 minutes (300 seconds)
 
 if __name__ == "__main__":
     main()
