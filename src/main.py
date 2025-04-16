@@ -17,8 +17,8 @@ def main():
     # 🔧 Config
     SUN_ANGLE_MIN = 10  # degrees
     SUN_ANGLE_MAX = 70  # degrees
-    WEST_MIN = 180  # degrees
-    WEST_MAX = 340  # degrees
+    WEST_MIN = 200  # degrees
+    WEST_MAX = 310  # degrees
 
     # 🌐 Homebridge webhook
     ACCESSORY_ID = "sun-incline"
