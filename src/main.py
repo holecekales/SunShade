@@ -17,8 +17,8 @@ def main():
     # 🔧 Config
     SUN_ANGLE_MIN = 10  # degrees
     SUN_ANGLE_MAX = 70  # degrees
-    WEST_MIN = 200  # degrees
-    WEST_MAX = 310  # degrees
+    AZIMUTH_MIN = 200  # degrees
+    AZIMUTH_MAX = 310  # degrees
 
     # 🌐 Homebridge webhook
     ACCESSORY_ID = "sun-incline"
@@ -39,11 +39,11 @@ def main():
 
     # 🚀 Trigger Homebridge webhook
     try:
-        if SUN_ANGLE_MIN <= el <= SUN_ANGLE_MAX and WEST_MIN <= az <= WEST_MAX:
-            print("→ 🔆 in window — triggering ON (contact)")
+        if SUN_ANGLE_MIN <= el <= SUN_ANGLE_MAX and AZIMUTH_MIN <= az <= AZIMUTH_MAX:
+            print("→ 🔆 IN  — triggering ON (contact)")
             requests.get(WEBHOOK_ON_URL, timeout=5)
         else:
-            print("→ 🔆 not in window — triggering OFF (no contact)")
+            print("→ 🔆 OUT — triggering OFF (no contact)")
             requests.get(WEBHOOK_OFF_URL, timeout=5)
     except requests.RequestException as e:
         print(f"⚠️ Error triggering webhook: {e}")
