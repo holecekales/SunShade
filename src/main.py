@@ -25,7 +25,7 @@ SUN_ANGLE_MIN = 7  # degrees
 SUN_ANGLE_MAX = 42  # degrees
 AZIMUTH_MIN = 200  # degrees
 AZIMUTH_MAX = 310  # degrees
-BRITNESS_THRESHOLD = 75  # threshold for brightness score to trigger webhook
+BRITNESS_THRESHOLD = 80  # threshold for brightness score to trigger webhook
 
 # 🌐 Homebridge webhook
 ACCESSORY_ID = "sun-incline"
@@ -45,9 +45,18 @@ def get_weather_data():
     """
     Fetch weather data from OpenWeatherMap API and return the entire response.
     """
-    url = f"https://api.openweathermap.org/data/3.0/onecall?lat={LATITUDE}&lon={LONGITUDE}&exclude=minutely,hourly,daily,alerts&appid={OWM_API_KEY}&units=metric"
+    url = f"https://api.openweathermap.org/data/3.0/onecall"
+    
+    params = {
+        "lat": LATITUDE,
+        "lon": LONGITUDE,
+        "appid": OWM_API_KEY,
+        "exclude": "minutely,daily,alerts", # Exclude unnecessary data (hourly is included by default)
+        "units": "metric"
+    }
+
     try:
-        response = requests.get(url, timeout=5)
+        response = requests.get(url, params=params, timeout=5)
         data = response.json()
         return data  # Return the entire JSON response
     except Exception as e:
