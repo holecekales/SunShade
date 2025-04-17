@@ -99,12 +99,16 @@ def sun_observation():
 def main():
     parser = argparse.ArgumentParser(description="Trigger homebridge based on solar elevation and azimuth.")
     parser.add_argument(
-        "--t", type=int, help="Timeout in seconds for running the loop. If not provided, the program runs once and exits."
+        "--t",
+        nargs="?",  # Makes the argument optional
+        const=1800,  # Default value if --t is provided without an integer
+        type=int,  # Ensures the value is an integer if provided
+        help="Timeout in seconds for running the loop. If --t is provided without a value, it defaults to 1800 seconds (30 minutes)."
     )
     args = parser.parse_args()
 
-    if args.t:
-        # Run in a loop with the specified timeout
+    if args.t is not None:
+        # Run in a loop with the specified or default timeout
         while True:
             sun_observation()
             print(f"⏳ Waiting for {args.t} seconds...")
