@@ -23,22 +23,25 @@ logging.basicConfig(
 )
 
 # 📍 Location: Kirkland, WA
-CITY_NAME = "Kirkland"
-LATITUDE = 47.6858
-LONGITUDE = -122.2087 #-122.1917 - align with the Weather Plus Plugin
-TIMEZONE = "America/Los_Angeles"
-COUNTRY_NAME = "USA"
+# Load configuration from environment variables
+CITY_NAME = os.getenv("CITY_NAME", "Kirkland")
+LATITUDE = float(os.getenv("LATITUDE", 47.6858))
+LONGITUDE = float(os.getenv("LONGITUDE", -122.2087))  # -122.1917 - align with the Weather Plus Plugin
+TIMEZONE = os.getenv("TIMEZONE", "America/Los_Angeles")
+COUNTRY_NAME = os.getenv("COUNTRY_NAME", "USA")
 
 # 🔧 Config
-SUN_ANGLE_MIN = 7  # degrees
-SUN_ANGLE_MAX = 42  # degrees
-AZIMUTH_MIN = 200  # degrees
-AZIMUTH_MAX = 310  # degrees
-BRITNESS_CLOSE_THRESHOLD = 33  # threshold for brightness score to trigger webhook
+SUN_ANGLE_MIN = float(os.getenv("SUN_ANGLE_MIN", 7))  # degrees
+SUN_ANGLE_MAX = float(os.getenv("SUN_ANGLE_MAX", 42))  # degrees
+AZIMUTH_MIN = float(os.getenv("AZIMUTH_MIN", 200))  # degrees
+AZIMUTH_MAX = float(os.getenv("AZIMUTH_MAX", 310))  # degrees
+BRITNESS_CLOSE_THRESHOLD = int(os.getenv("BRITNESS_CLOSE_THRESHOLD", 33))  # threshold for brightness score to trigger webhook
 
 # 🌐 Homebridge webhook
-ACCESSORY_ID = "sun-incline"
-HOMEBRIDGE_URL = "http://homebridge.local:51828"
+ACCESSORY_ID = os.getenv("ACCESSORY_ID", "sun-incline")
+HOMEBRIDGE_HOST = os.getenv("HOMEBRIDGE_HOST", "http://homebridge.local")
+HOMEBRIDGE_PORT = os.getenv("HOMEBRIDGE_PORT", "51828")
+HOMEBRIDGE_URL = f"{HOMEBRIDGE_HOST}:{HOMEBRIDGE_PORT}"
 WEBHOOK_ON_URL = f"{HOMEBRIDGE_URL}/?accessoryId={ACCESSORY_ID}&state=true"
 WEBHOOK_OFF_URL = f"{HOMEBRIDGE_URL}/?accessoryId={ACCESSORY_ID}&state=false"
 
