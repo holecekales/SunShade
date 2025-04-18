@@ -14,7 +14,7 @@ def log_solar_data(city, current, forecast_points, glare_window):
     # Log glare window
     start = glare_window["start"].strftime("%H:%M")
     end = glare_window["end"].strftime("%H:%M")
-    logging.info(f"🌞 Today's glare window in {city.name}: {start} → {end}")
+    logging.info(f"🌅 Today's glare window in {city.name}: {start} → {end}")
 
     # Log glare hours remaining
     if not forecast_points:
@@ -25,7 +25,8 @@ def log_solar_data(city, current, forecast_points, glare_window):
 
     # Calculate and log average cloud cover
     avg_clouds = sum(p["clouds"] for p in forecast_points) / len(forecast_points)
-    logging.info(f"☁  Average cloud cover in forecast: {avg_clouds:.1f}%")
+    logging.info(f"🌤️  Average cloud cover in glare window: {avg_clouds:.1f}%")
+
 
     # Log table header
     logging.info(f"{'Time':<6} | {'Elev (°)':<10} | {'Azim (°)':<10} | {'Clouds (%)':<10} | {'UVI':<5}")
