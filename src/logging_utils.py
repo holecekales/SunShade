@@ -1,5 +1,6 @@
 import logging
 
+# This function formats a cell for logging, right-aligning the value and unit, and optionally adding an indicator emoji.
 def format_cell(value, unit, indicator=None, width=10):
     """Right-align the value + unit, then append emoji (monospace-safe)."""
     val_str = f"{value:>5.1f}{unit}"
@@ -9,6 +10,7 @@ def format_cell(value, unit, indicator=None, width=10):
         return f"{val_str} {indicator}".ljust(width-1)
     return val_str.ljust(width)
 
+# This function logs solar data, including glare window and forecast points.
 def log_solar_data(city, current, forecast_points, glare_window):
     """Logs solar data, including glare window and forecast points."""
     # Log glare window
