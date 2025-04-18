@@ -63,7 +63,7 @@ cd SunShade
    - **`CITY_NAME`, `LATITUDE`, `LONGITUDE`**: Set these to your location's name and GPS coordinates. Use Google Maps to find your latitude and longitude.
    - **`TIMEZONE`**: Use the IANA timezone for your location (e.g., `America/Los_Angeles` for Pacific Time).
    - **`SUN_ANGLE_MIN`, `SUN_ANGLE_MAX`, `AZIMUTH_MIN`, `AZIMUTH_MAX`**: These define the sun's elevation and azimuth angles for glare calculations. Adjust if needed.
-   - **`BRITNESS_CLOSE_THRESHOLD`**: The cloud cover percentage threshold (0-100) above which glare is considered blocked.
+   - **`BRITNESS_CLOSE_THRESHOLD`**: The cloud cover percentage threshold (0-100) above which glare is considered not an issue - so don't close the shutters.
    - **`ACCESSORY_ID`, `HOMEBRIDGE_HOST`, `HOMEBRIDGE_PORT`**: Configure these for your Homebridge setup.
 
 ### 3. You can Use the Makefile to Simplify Setup
