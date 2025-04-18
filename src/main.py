@@ -50,9 +50,6 @@ if not OWM_API_KEY:
 # --- Function to fetch weather data from OpenWeatherMap API ---
 # This function fetches the weather data from OpenWeatherMap API and returns the entire response.
 def get_weather_data():
-    """
-    Fetch weather data from OpenWeatherMap API and return the entire response.
-    """
     url = f"https://api.openweathermap.org/data/3.0/onecall"
     
     params = {
@@ -76,7 +73,9 @@ def log_forecast_table(current, forecast_points, threshold=BRITNESS_CLOSE_THRESH
         """Right-align the value + unit, then append emoji (monospace-safe)."""
         val_str = f"{value:>5.1f}{unit}"
         if indicator:
-            return f"{val_str} {indicator}".ljust(width)
+            # Add indicator emoji to the right of the value
+            # Pad the string to the left to make room for the indicator which is 2 characters wide
+            return f"{val_str} {indicator}".ljust(width-1)
         return val_str.ljust(width)
 
     # Calculate indicators for current values
@@ -89,9 +88,9 @@ def log_forecast_table(current, forecast_points, threshold=BRITNESS_CLOSE_THRESH
     logging.info("-" * 52)
 
     # Current row
-    elev_cell = format_cell(current["elev"], "°", "✅" if elev_in else "❌", 9)
-    azim_cell = format_cell(current["azim"], "°", "✅" if azim_in else "❌", 9)
-    cloud_cell = format_cell(current["clouds"], "%", "✅" if cloud_in else "❌", 9)
+    elev_cell = format_cell(current["elev"], "°", "✅" if elev_in else "❌")
+    azim_cell = format_cell(current["azim"], "°", "✅" if azim_in else "❌")
+    cloud_cell = format_cell(current["clouds"], "%", "✅" if cloud_in else "❌")
     uvi_cell = f"{current['uvi']:<5.1f}"
 
     logging.info(f"{'Now':<6} | {elev_cell} | {azim_cell} | {cloud_cell} | {uvi_cell}")
