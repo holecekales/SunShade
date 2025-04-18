@@ -1,6 +1,7 @@
 # SunShade
 
-SunShade is a Python script that triggers webhook on [Homebridge](https://homebridge.io) based on the position of the sun, cloud cover, and other environmental factors. It uses OpenWeatherMap API to get weather forecast, and Homebridge Webhooks ([Homebridge Webhooks](https://github.com/benzman81/homebridge-http-webhooks?tab=readme-ov-file#homebridge-http-webhooks)) to trigger contact switch. From there you can further automate (mostly like shutters) to prevent a glare in your home.
+SunShade is a Python script that triggers webhook on [Homebridge](https://homebridge.io).The script evaluates position of the sun, cloud cover, and other environmental factors to decide if the webhook should be triggered. The idea is to reduce sun glare in a house. 
+It uses OpenWeatherMap API to get weather forecast, and Homebridge Webhooks ([Homebridge Webhooks](https://github.com/benzman81/homebridge-http-webhooks?tab=readme-ov-file#homebridge-http-webhooks)) to trigger contact switch,which than can be used to automate various Apple Homekit appliences. My intent is to automate window shades.
 
 ## Setup Instructions
 
