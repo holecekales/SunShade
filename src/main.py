@@ -9,9 +9,17 @@ from dotenv import load_dotenv
 import os
 import time  # For the loop delay
 import argparse
+import logging
+
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Logging setup
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 # 📍 Location: Kirkland, WA
 CITY_NAME = "Kirkland"
@@ -25,8 +33,7 @@ SUN_ANGLE_MIN = 7  # degrees
 SUN_ANGLE_MAX = 42  # degrees
 AZIMUTH_MIN = 200  # degrees
 AZIMUTH_MAX = 310  # degrees
-BRITNESS_CLOSE_THRESHOLD = 80  # threshold for brightness score to trigger webhook
-BRITNESS_OPEN_THRESHOLD  = 60  # threshold for brightness score to trigger webhook
+BRITNESS_CLOSE_THRESHOLD = 20  # threshold for brightness score to trigger webhook
 
 # 🌐 Homebridge webhook
 ACCESSORY_ID = "sun-incline"
@@ -64,153 +71,139 @@ def get_weather_data():
         print(f"⚠️  Failed to get weather data: {e}")
         return None  # Return None if the API call fails
 
-# --- Function to perform linear interpolation ---
-def lerp(x1, x2, y1, y2, x):
-    if x2 == x1:  # Avoid division by zero
-        return y1
-    return y1 + (y2 - y1) * ((x - x1) / (x2 - x1))
+def log_forecast_table(current, forecast_points, threshold=BRITNESS_CLOSE_THRESHOLD):
+    def format_cell(value, unit, indicator=None, width=10):
+        """Right-align the value + unit, then append emoji (monospace-safe)."""
+        val_str = f"{value:>5.1f}{unit}"
+        if indicator:
+            return f"{val_str} {indicator}".ljust(width)
+        return val_str.ljust(width)
 
-# --- Function to interpolate forecast data ---
-def interpolate_forecast(forecast, timezone, interval_minutes=15, duration_minutes=60):
-    steps = duration_minutes // interval_minutes
-    times = [datetime.fromtimestamp(hour["dt"], timezone) for hour in forecast]
-    clouds = [hour["clouds"] for hour in forecast]
-    uvi = [hour["uvi"] for hour in forecast]
+    # Calculate indicators for current values
+    elev_in = SUN_ANGLE_MIN <= current['elev'] <= SUN_ANGLE_MAX
+    azim_in = AZIMUTH_MIN <= current['azim'] <= AZIMUTH_MAX
+    cloud_in = current['clouds'] <= threshold
 
-    # Generate timestamps for interpolation
-    start_time = times[0]
-    end_time = start_time + timedelta(minutes=duration_minutes)
-    interpolated_times = [start_time + timedelta(minutes=i * interval_minutes) for i in range(steps + 1)]
+    # Header
+    logging.info(f"{'Time':<6} | {'Elev (°)':<10} | {'Azim (°)':<10} | {'Clouds (%)':<10} | {'UVI':<5}")
+    logging.info("-" * 52)
 
-    # Interpolate clouds and UVI manually using lerp
-    interpolated_clouds = []
-    interpolated_uvi = []
+    # Current row
+    elev_cell = format_cell(current["elev"], "°", "✅" if elev_in else "❌", 9)
+    azim_cell = format_cell(current["azim"], "°", "✅" if azim_in else "❌", 9)
+    cloud_cell = format_cell(current["clouds"], "%", "✅" if cloud_in else "❌", 9)
+    uvi_cell = f"{current['uvi']:<5.1f}"
 
-    for t in interpolated_times:
-        # Find the two closest forecast points for interpolation
-        for i in range(len(times) - 1):
-            if times[i] <= t <= times[i + 1]:
-                interpolated_clouds.append(lerp(times[i].timestamp(), times[i + 1].timestamp(), clouds[i], clouds[i + 1], t.timestamp()))
-                interpolated_uvi.append(lerp(times[i].timestamp(), times[i + 1].timestamp(), uvi[i], uvi[i + 1], t.timestamp()))
-                break
+    logging.info(f"{'Now':<6} | {elev_cell} | {azim_cell} | {cloud_cell} | {uvi_cell}")
 
-    return interpolated_times, interpolated_clouds, interpolated_uvi
+    # Forecast rows (no indicators)
+    for point in forecast_points:
+        t = point["time"].strftime("%H:%M")
+        elev = format_cell(point["elev"], "°")
+        azim = format_cell(point["azim"], "°")
+        cloud = format_cell(point["clouds"], "%")
+        uvi = f"{point['uvi']:<5.1f}"
+        logging.info(f"{t:<6} | {elev} | {azim} | {cloud} | {uvi}")
 
-# --- Function to calculate solar position ---
-def calculate_solar_positions(location, times):
-    solar_positions = []
-    for time in times:
-        el = elevation(location.observer, time)
-        az = azimuth(location.observer, time)
-        solar_positions.append((el, az))
-    return solar_positions
+    logging.info("-" * 52)
 
-# --- Function to compute brightness score based on UVI, clouds, elevation, and azimuth ---
-def compute_brightness_score(uvi, clouds, elev, azim):
-    # 1. Elevation score: 1 if within glare range
-    elev_score = 1.0 if SUN_ANGLE_MIN <= elev <= SUN_ANGLE_MAX else 0.0
 
-    # 2. Azimuth score: 1 if sun is facing the window
-    azim_score = 1.0 if AZIMUTH_MIN <= azim <= AZIMUTH_MAX else 0.0
 
-    # 3. Cloud clarity score: 1.0 for clear skies, 0.0 for fully overcast
-    cloud_score = max(0, min((100 - clouds) / 100, 1.0))
+# extract_remaining_glare_forecast function
+def extract_remaining_glare_forecast(city, forecast, tz):
+    now = datetime.now(tz)
+    glare_points = []
 
-    # 4. UVI score: placeholder, always 1 for now
-    uvi_score = 1.0  # Will evolve based on future empirical insight
+    for hour in forecast:
+        dt = datetime.fromtimestamp(hour["dt"], tz)
+        elev = elevation(city.observer, dt)
+        azim = azimuth(city.observer, dt)
 
-    # Final score: Multiplicative model (binary gates + clarity)
-    score = max(0, min(elev_score * azim_score * cloud_score * uvi_score * 100, 100))
+        if SUN_ANGLE_MIN <= elev <= SUN_ANGLE_MAX and AZIMUTH_MIN <= azim <= AZIMUTH_MAX:
+            glare_points.append({
+                "time": dt,
+                "clouds": hour["clouds"],
+                "uvi": hour.get("uvi", 0),
+                "elev": elev,
+                "azim": azim
+            })
 
-    # Display table
-    print(f"{'Metric':<15}{'Value':<15}{'Score':<15}")
-    print(f"{'-' * 45}")
-    print(f"{'Elevation':<15}{f'{elev:.2f}°':<15}{f'{elev_score:.2f}':<15}")
-    print(f"{'Azimuth':<15}{f'{azim:.2f}°':<15}{f'{azim_score:.2f}':<15}")
-    print(f"{'Cloud':<15}{f'{clouds:.1f}%':<15}{f'{cloud_score:.2f}':<15}")
-    print(f"{'UVI':<15}{f'{uvi:.1f}':<15}{f'{uvi_score:.2f}':<15}")
-    print(f"{'-' * 45}")
-    print(f"{'Score (product)':<15}{'':<15}{f'{score:.2f}':<15}")
+    remaining = [pt for pt in glare_points if pt["time"] >= now]
+
+    if glare_points:
+        start = glare_points[0]["time"].strftime("%H:%M")
+        end = glare_points[-1]["time"].strftime("%H:%M")
+        logging.info(f"🌅 Today's glare window: {start} → {end}")
+        logging.info(f"🕓 Remaining forecast points: {len(remaining)}")
+    else:
+        logging.info("❌ No glare window found in forecast today.")
+
+    return remaining
+
+# --- should_close_shades function ---
+def should_close_shades(current_obs, glare_forecast, threshold=BRITNESS_CLOSE_THRESHOLD):
+    avg_clouds = 0
+    if glare_forecast:
+        avg_clouds = sum(p["clouds"] for p in glare_forecast) / len(glare_forecast)
+
+    current_clouds = current_obs["clouds"]
+    current_elev = current_obs["elev"]
+    current_azim = current_obs["azim"]
+
+    # Check if sun is within the glare bounds
+    if not (SUN_ANGLE_MIN <= current_elev <= SUN_ANGLE_MAX and AZIMUTH_MIN <= current_azim <= AZIMUTH_MAX):
+        return False
     
-    return score
+    # Check cloud conditions
+    if current_clouds > threshold:
+        return False
+    elif avg_clouds > threshold:
+        return False
+    else:
+        return True
 
-# --- Function to decide whether to delay shade movement ---
-def should_delay_change(score_now, forecast_scores, direction, threshold_close=0.75, threshold_open=0.5):
-    """
-    Decide whether to delay shade movement based on forecast scores.
-    """
-    if direction == "close":
-        # If it's bright now but forecast says it will dim soon, delay closing
-        if score_now >= threshold_close and any(score < threshold_close for score in forecast_scores):
-            return True
-    elif direction == "open":
-        # If it's dim now but forecast says it will brighten briefly, delay opening
-        if score_now <= threshold_open and any(score > threshold_open for score in forecast_scores):
-            return True
-    return False
-
-# --- Updated sun observation function ---
 def sun_observation():
-    # 🌍 Set up location
     city = LocationInfo(CITY_NAME, COUNTRY_NAME, TIMEZONE, LATITUDE, LONGITUDE)
     tz = pytz.timezone(city.timezone)
     now = datetime.now(tz)
 
-    # ☁️ Fetch weather data
     weather_data = get_weather_data()
     if not weather_data:
-        print("⚠️  Unable to fetch weather data. Skipping observation.")
         return
 
-    # Extract forecast data
     forecast = weather_data.get("hourly", [])
     if not forecast:
-        print("⚠️  No forecast data available. Skipping observation.")
         return
 
-    # Interpolate forecast data
-    interpolated_times, interpolated_clouds, interpolated_uvi = interpolate_forecast(forecast, tz)
-
-    # Calculate solar positions for interpolated times
-    solar_positions = calculate_solar_positions(city, interpolated_times)
-
-    # Compute brightness scores for each interpolated time
-    forecast_scores = []
-    for i, (time, clouds, uvi) in enumerate(zip(interpolated_times, interpolated_clouds, interpolated_uvi)):
-        el, az = solar_positions[i]
-        score = compute_brightness_score(uvi, clouds, el, az)
-        forecast_scores.append(score)
-
-
-    # 🌅 Calculate current solar elevation and azimuth
-    el = elevation(city.observer, now)
-    az = azimuth(city.observer, now)
-
-    # 🌞 Compute current brightness score
     clouds_now = weather_data.get("current", {}).get("clouds", 100)
     uvi_now = weather_data.get("current", {}).get("uvi", 0)
-    score_now = compute_brightness_score(uvi_now, clouds_now, el, az)
+    elev_now = elevation(city.observer, now)
+    azim_now = azimuth(city.observer, now)
 
+    current_obs = {
+        "time": now,
+        "clouds": clouds_now,
+        "uvi": uvi_now,
+        "elev": elev_now,
+        "azim": azim_now
+    }
 
-    # 🚀 Decide whether to delay shade movement
-    if score_now >= BRITNESS_CLOSE_THRESHOLD:
-        # if should_delay_change(score_now, forecast_scores, direction="close"):
-        #     print("⏳ Delaying shade closing based on forecast.")
-        #     return
-        print("✅ Conditions met → triggering sensor ON")
+    glare_forecast = extract_remaining_glare_forecast(city, forecast, tz)
+    log_forecast_table(current_obs, glare_forecast)
+
+    if should_close_shades(current_obs, glare_forecast):
         try:
+            logging.info("🔽 CLOSE SHADES → Triggering webhook ON")
             requests.get(WEBHOOK_ON_URL, timeout=5)
         except Exception as e:
-            print(f"⚠️  Solar Webhook ON failed: {e}")
-    elif score_now <= BRITNESS_CLOSE_THRESHOLD:
-        # if should_delay_change(score_now, forecast_scores, direction="open"):
-        #     print("⏳ Delaying shade opening based on forecast.")
-        #     return
-        print("🚫 Conditions not met → triggering sensor OFF")
+            logging.error(f"⚠️ Webhook ON failed: {e}")
+    else:
         try:
+            logging.info("🔼 DO NOT CLOSE → Triggering webhook OFF")
             requests.get(WEBHOOK_OFF_URL, timeout=5)
         except Exception as e:
-            print(f"⚠️  Solar Webhook OFF failed: {e}")
+            logging.error(f"⚠️ Webhook OFF failed: {e}")
+
 
 # Main function to handle the loop or single execution
 def main():
