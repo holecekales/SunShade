@@ -1,4 +1,5 @@
 .env
 src/__pycache__/
 *.py[cod]
+.vscode/
 
