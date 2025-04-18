@@ -20,7 +20,7 @@ update:  ## Upgrade all packages to latest versions (safely)
 		echo "Updating: $$outdated"; \
 		echo "$$outdated" | xargs -n1 $(PIP) install -U; \
 	else \
-		echo "✅ All packages are up to date."; \
+		echo "All packages are up to date."; \
 	fi
 
 check:  ## Show outdated packages
