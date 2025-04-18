@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from astral import LocationInfo
-from astral.sun import elevation, azimuth #, sun
+from astral.sun import elevation, azimuth, sun
 from datetime import datetime, timedelta
 import requests
 from math import degrees
@@ -68,7 +68,7 @@ def get_weather_data():
         print(f"⚠️  Failed to get weather data: {e}")
         return None  # Return None if the API call fails
 
-def log_forecast_table(current, forecast_points, threshold=BRITNESS_CLOSE_THRESHOLD):
+def log_solar_data(city, timezone, current, forecast_points):
     def format_cell(value, unit, indicator=None, width=10):
         """Right-align the value + unit, then append emoji (monospace-safe)."""
         val_str = f"{value:>5.1f}{unit}"
@@ -81,7 +81,25 @@ def log_forecast_table(current, forecast_points, threshold=BRITNESS_CLOSE_THRESH
     # Calculate indicators for current values
     elev_in = SUN_ANGLE_MIN <= current['elev'] <= SUN_ANGLE_MAX
     azim_in = AZIMUTH_MIN <= current['azim'] <= AZIMUTH_MAX
-    cloud_in = current['clouds'] <= threshold
+    cloud_in = current['clouds'] <= BRITNESS_CLOSE_THRESHOLD
+
+    # Calculate and log glare window for today
+    sun_start, sun_end = calculate_glare_window(city.observer, timezone)
+    start = sun_start.strftime("%H:%M")
+    end = sun_end.strftime("%H:%M")
+    logging.info(f"🌞 Today's glare window in {city.name}: {start} → {end}")
+
+    # Calculate and log glare window from forecast
+    if not forecast_points:
+        logging.info("🕓 No glare hours remaining in forecast for today.")
+        return
+    
+    logging.info(f"🕓 Glare hours remaining: {len(forecast_points)}")
+    
+    avg_clouds = 0
+    avg_clouds = sum(p["clouds"] for p in forecast_points) / len(forecast_points)
+    logging.info(f"☁️  Average cloud cover in forecast: {avg_clouds:.1f}%")
+
 
     # Header
     logging.info(f"{'Time':<6} | {'Elev (°)':<10} | {'Azim (°)':<10} | {'Clouds (%)':<10} | {'UVI':<5}")
@@ -106,15 +124,44 @@ def log_forecast_table(current, forecast_points, threshold=BRITNESS_CLOSE_THRESH
 
     logging.info("-" * 52)
 
+# --- Function to calculate glare window for today ---
+def calculate_glare_window(observer, tz):
+    date_today = datetime.now(tz).date()
+    solar_times = sun(observer, date=date_today, tzinfo=tz)
+    start = solar_times["sunrise"]
+    end = solar_times["sunset"]
 
+    step = timedelta(minutes=1)
+    glare_start = None
+    glare_end = None
+
+    t = start
+    while t <= end:
+        elev = elevation(observer, t)
+        azim = azimuth(observer, t)
+
+        if SUN_ANGLE_MIN <= elev <= SUN_ANGLE_MAX and AZIMUTH_MIN <= azim <= AZIMUTH_MAX:
+            if not glare_start:
+                glare_start = t
+            glare_end = t  # keep updating as long as it's in range
+
+        t += step
+
+    return glare_start, glare_end
 
 # extract_remaining_glare_forecast function
-def extract_remaining_glare_forecast(city, forecast, tz):
+def get_glare_forecast(city, forecast, tz):
     now = datetime.now(tz)
+    end_of_day = datetime(now.year, now.month, now.day, 23, 59, 59, tzinfo=tz)  # End of the current day
     glare_points = []
 
     for hour in forecast:
         dt = datetime.fromtimestamp(hour["dt"], tz)
+
+         # Skip points outside the current day
+        if dt > end_of_day:
+            break
+
         elev = elevation(city.observer, dt)
         azim = azimuth(city.observer, dt)
 
@@ -128,19 +175,11 @@ def extract_remaining_glare_forecast(city, forecast, tz):
             })
 
     remaining = [pt for pt in glare_points if pt["time"] >= now]
-
-    if glare_points:
-        start = glare_points[0]["time"].strftime("%H:%M")
-        end = glare_points[-1]["time"].strftime("%H:%M")
-        logging.info(f"🌅 Today's glare window: {start} → {end}")
-        logging.info(f"🕓 Remaining forecast points: {len(remaining)}")
-    else:
-        logging.info("❌ No glare window found in forecast today.")
-
+    
     return remaining
 
 # --- should_close_shades function ---
-def should_close_shades(current_obs, glare_forecast, threshold=BRITNESS_CLOSE_THRESHOLD):
+def should_close_shades(current_obs, glare_forecast):
     avg_clouds = 0
     if glare_forecast:
         avg_clouds = sum(p["clouds"] for p in glare_forecast) / len(glare_forecast)
@@ -154,14 +193,16 @@ def should_close_shades(current_obs, glare_forecast, threshold=BRITNESS_CLOSE_TH
         return False
     
     # Check cloud conditions
-    if current_clouds > threshold:
+    if current_clouds > BRITNESS_CLOSE_THRESHOLD:
         return False
-    elif avg_clouds > threshold:
+    elif avg_clouds > BRITNESS_CLOSE_THRESHOLD:
         return False
     else:
         return True
 
-def sun_observation():
+# --- Main function to evaluate sun conditions and trigger webhooks ---
+# This function evaluates the current sun conditions and triggers webhooks based on the results.
+def sun_evaluation():
     city = LocationInfo(CITY_NAME, COUNTRY_NAME, TIMEZONE, LATITUDE, LONGITUDE)
     tz = pytz.timezone(city.timezone)
     now = datetime.now(tz)
@@ -182,8 +223,8 @@ def sun_observation():
         "azim":     azimuth(city.observer, now)
     }
 
-    glare_forecast = extract_remaining_glare_forecast(city, forecast, tz)
-    log_forecast_table(current_obs, glare_forecast)
+    glare_forecast = get_glare_forecast(city, forecast, tz)
+    log_solar_data(city, tz, current_obs, glare_forecast)
 
     if should_close_shades(current_obs, glare_forecast):
         try:
@@ -214,12 +255,12 @@ def main():
     if args.t is not None:
         # Run in a loop with the specified or default timeout
         while True:
-            sun_observation()
+            sun_evaluation()
             print(f"⏳ Waiting for {args.t} seconds...")
             time.sleep(args.t)
     else:
         # Run once and exit
-        sun_observation()
+        sun_evaluation()
 
 if __name__ == "__main__":
     main()
