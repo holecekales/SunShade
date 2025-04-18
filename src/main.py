@@ -33,7 +33,7 @@ SUN_ANGLE_MIN = 7  # degrees
 SUN_ANGLE_MAX = 42  # degrees
 AZIMUTH_MIN = 200  # degrees
 AZIMUTH_MAX = 310  # degrees
-BRITNESS_CLOSE_THRESHOLD = 20  # threshold for brightness score to trigger webhook
+BRITNESS_CLOSE_THRESHOLD = 33  # threshold for brightness score to trigger webhook
 
 # 🌐 Homebridge webhook
 ACCESSORY_ID = "sun-incline"
@@ -174,17 +174,12 @@ def sun_observation():
     if not forecast:
         return
 
-    clouds_now = weather_data.get("current", {}).get("clouds", 100)
-    uvi_now = weather_data.get("current", {}).get("uvi", 0)
-    elev_now = elevation(city.observer, now)
-    azim_now = azimuth(city.observer, now)
-
     current_obs = {
-        "time": now,
-        "clouds": clouds_now,
-        "uvi": uvi_now,
-        "elev": elev_now,
-        "azim": azim_now
+        "time":     now,
+        "clouds":   weather_data.get("current", {}).get("clouds", 100),
+        "uvi":      weather_data.get("current", {}).get("uvi", 0),
+        "elev":     elevation(city.observer, now),
+        "azim":     azimuth(city.observer, now)
     }
 
     glare_forecast = extract_remaining_glare_forecast(city, forecast, tz)
