@@ -10,7 +10,6 @@ LOG_BOOT := $(HOME)/boot.log
 OS := $(shell uname -s 2>/dev/null || echo Windows)
 OS := Windows
 
-UTF8_ENV := LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 # Default target
 .DEFAULT_GOAL := help
 
@@ -64,7 +63,7 @@ logs: ## Show boot and cron logs
 cron:
 	@echo "Installing crontab entries..."
 	@crontab -l 2>/dev/null | grep -v "$(PYTHON)" > temp_cron || true
-	@echo "*/15 * * * * cd $(shell pwd) && $(UTF8_ENV) $(PYTHON) $(SRC) >> cron.log 2>&1" >> temp_cron
+	@echo "*/15 * * * * cd $(shell pwd) && $(PYTHON) $(SRC) >> cron.log 2>&1" >> temp_cron
 	@sort -u temp_cron > temp_cron_sorted
 	@crontab temp_cron_sorted
 	@rm -f temp_cron temp_cron_sorted
