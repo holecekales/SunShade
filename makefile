@@ -1,11 +1,11 @@
 # --- Configuration ---
 VENV := .venv
 SRC := src/main.py
-
-SCRIPT_PATH := $(shell realpath $(SRC))
-LOG_CRON := $(shell pwd)/cron.log
-LOG_BOOT := $(shell pwd)/boot.log
 REQUIREMENTS := requirements.txt
+
+HOME := $(shell pwd)
+LOG_CRON := $(HOME)/cron.log
+LOG_BOOT := $(HOME)/boot.log
 
 OS := $(shell uname -s 2>/dev/null || echo Windows)
 OS := Windows
@@ -15,11 +15,15 @@ UTF8_ENV := LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 .DEFAULT_GOAL := help
 
 ifeq ($(OS),Windows)
-	PYTHON := $(shell pwd)/$(VENV)/Scripts/python.exe
-	PIP := $(shell pwd)/$(VENV)/Scripts/pip.exe
+	SCRIPT_PATH := $(HOME)/$(VENV)/Scripts
+	ACTIVATE := $(SCRIPT_PATH)/activate.bat
+	PYTHON := $(SCRIPT_PATH)/python.exe
+	PIP := $(SCRIPT_PATH)/pip.exe
 else
-	PYTHON := $(shell pwd)/$(VENV)/bin/python
-	PIP := $(shell pwd)/$(VENV)/bin/pip
+	SCRIPT_PATH := $(HOME)/$(VENV)/bin
+	ACTIVATE := $(SCRIPT_PATH)/activate
+	PYTHON := $(SCRIPT_PATH)/python
+	PIP := $(SCRIPT_PATH)/pip
 endif
 
 .PHONY: help venv install update run logs cron clean freeze check
@@ -29,7 +33,7 @@ install:  ## Create venv if it doesn't exist and install all dependencies
 	@if [ ! -d "$(VENV)" ]; then \
 		python3 -m venv $(VENV); \
 	fi
-	. $(VENV)/bin/activate && $(PIP) install -r requirements.txt || $(PIP) install -r requirements.txt
+	$(PIP) install -r requirements.txt
 
 freeze:  ## Freeze current venv to requirements.txt
 	$(PIP) freeze > requirements.txt
@@ -69,3 +73,11 @@ cron:
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf ">  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+	@echo OS: $(OS)
+	@echo HOME: $(HOME)
+	@echo VENV: $(VENV)
+	@echo SCRIPT_PATH: $(SCRIPT_PATH)
+	@echo PYTHON: $(PYTHON)
+	@echo PIP: $(PIP)
+	@echo ACTIVATE: $(ACTIVATE)
+	
