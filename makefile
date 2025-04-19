@@ -76,15 +76,15 @@ cron: ## Register the script in crontab (Linux)
 setup-logrotate: ## Setup logrotate for cron logs (Linux)
 	@echo "Setup logrotate for cron logs..."
 	@echo "$(LOG_CRON) {"          >  $(LOGTMP)
-	@echo "    daily"              >> $(LOGTMP)
-	@echo "    rotate 7"           >> $(LOGTMP)
+	@echo "    weekly"              >> $(LOGTMP)
+	@echo "    rotate 3"           >> $(LOGTMP)
 	@echo "    compress"           >> $(LOGTMP)
 	@echo "    missingok"          >> $(LOGTMP)
 	@echo "    notifempty"         >> $(LOGTMP)
 	@echo "    copytruncate"       >> $(LOGTMP)
 	@echo "}"                      >> $(LOGTMP)
-	@sudo mv $(LOGTMP) $(LOGROTATE_CONF)
-	@echo "logrotate config installed at $(LOGROTATE_CONF)"
+##	@sudo mv $(LOGTMP) $(LOGROTATE_CONF)
+	@echo "Rotation of logs  installed at $(LOGROTATE_CONF)"
 
 
 vars: ## Show variables
