@@ -4,8 +4,12 @@ SRC := src/main.py
 REQUIREMENTS := requirements.txt
 
 HOME := $(shell pwd)
+PROJECT_NAME := $(notdir $(HOME))
+
 LOG_CRON := $(HOME)/cron.log
-LOG_BOOT := $(HOME)/boot.log
+
+LOGROTATE_CONF := /etc/logrotate.d/$(PROJECT_NAME)
+LOGTMP := $(HOME)/$(PROJECT_NAME)_rotate.conf
 
 OS := $(shell uname -s 2>/dev/null || echo Windows)
 #OS := Windows
@@ -69,14 +73,32 @@ cron: ## Register the script in crontab (Linux)
 	@rm -f temp_cron temp_cron_sorted
 	@echo "Crontab updated. Use 'crontab -l' to verify."
 
+setup-logrotate: ## Setup logrotate for cron logs (Linux)
+	@echo "Setup logrotate for cron logs..."
+	@echo "$(LOG_CRON) {"          >  $(LOGTMP)
+	@echo "    daily"              >> $(LOGTMP)
+	@echo "    rotate 7"           >> $(LOGTMP)
+	@echo "    compress"           >> $(LOGTMP)
+	@echo "    missingok"          >> $(LOGTMP)
+	@echo "    notifempty"         >> $(LOGTMP)
+	@echo "    copytruncate"       >> $(LOGTMP)
+	@echo "}"                      >> $(LOGTMP)
+	@sudo mv $(LOGTMP) $(LOGROTATE_CONF)
+	@echo "logrotate config installed at $(LOGROTATE_CONF)"
 
-help:  ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf ">  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+
+vars: ## Show variables
 	@echo OS: $(OS)
 	@echo HOME: $(HOME)
 	@echo VENV: $(VENV)
 	@echo SCRIPT_PATH: $(SCRIPT_PATH)
 	@echo PYTHON: $(PYTHON)
 	@echo PIP: $(PIP)
-	@echo ACTIVATE: $(ACTIVATE)
-	
+	@echo PPROJECT_NAME: $(PROJECT_NAME)
+	@echo LOG_CRON: $(LOG_CRON)
+	@echo LOGROTATE_CONF: $(LOGROTATE_CONF)
+	@echo LOGTMP: $(LOGTMP)
+
+
+help:  ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf ">  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
