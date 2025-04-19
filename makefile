@@ -83,7 +83,7 @@ setup-logrotate: ## Setup logrotate for cron logs (Linux)
 	@echo "    notifempty"         >> $(LOGTMP)
 	@echo "    copytruncate"       >> $(LOGTMP)
 	@echo "}"                      >> $(LOGTMP)
-##	@sudo mv $(LOGTMP) $(LOGROTATE_CONF)
+	@sudo mv $(LOGTMP) $(LOGROTATE_CONF)
 	@echo "Rotation of logs  installed at $(LOGROTATE_CONF)"
 
 
