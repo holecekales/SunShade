@@ -8,7 +8,7 @@ LOG_CRON := $(HOME)/cron.log
 LOG_BOOT := $(HOME)/boot.log
 
 OS := $(shell uname -s 2>/dev/null || echo Windows)
-OS := Windows
+#OS := Windows
 
 # Default target
 .DEFAULT_GOAL := help
