@@ -29,7 +29,7 @@ else
 	PIP := $(SCRIPT_PATH)/pip
 endif
 
-.PHONY: help venv install update run logs cron clean freeze check
+.PHONY: help venv install update run logs cron clean freeze check setup-logrotate vars
 
 # --- Targets ---
 install:  ## Create venv if it doesn't exist and install all dependencies
