@@ -192,13 +192,13 @@ def sun_evaluation():
 
     if should_close_shades(current_obs, glare_forecast):
         try:
-            logging.info("CLOSE SHADES -> Triggering webhook ON")
+            logging.info("Triggering webhook ON")
             requests.get(WEBHOOK_ON_URL, timeout=5)
         except Exception as e:
             logging.error(f"Webhook ON failed: {e}")
     else:
         try:
-            logging.info("DO NOT CLOSE -> Triggering webhook OFF")
+            logging.info("Triggering webhook OFF")
             requests.get(WEBHOOK_OFF_URL, timeout=5)
         except Exception as e:
             logging.error(f"Webhook OFF failed: {e}")
