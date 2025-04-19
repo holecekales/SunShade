@@ -26,7 +26,7 @@ logging.basicConfig(
 # Load configuration from environment variables
 CITY_NAME = os.getenv("CITY_NAME", "Kirkland")
 LATITUDE = float(os.getenv("LATITUDE", 47.6858))
-LONGITUDE = float(os.getenv("LONGITUDE", -122.2087))  # -122.1917 - align with the Weather Plus Plugin
+LONGITUDE = float(os.getenv("LONGITUDE", -122.2087)) 
 TIMEZONE = os.getenv("TIMEZONE", "America/Los_Angeles")
 COUNTRY_NAME = os.getenv("COUNTRY_NAME", "USA")
 
@@ -49,10 +49,10 @@ WEBHOOK_OFF_URL = f"{HOMEBRIDGE_URL}/?accessoryId={ACCESSORY_ID}&state=false"
 OWM_API_KEY = os.getenv("OWM_API_KEY")
 
 if not OWM_API_KEY:
-    raise ValueError("⚠️  OpenWeatherMap API key is missing. Please set it in the .env file.")
+    logging.error("OpenWeatherMap API key is missing. Please set it in the .env file.")
+    raise ValueError("OpenWeatherMap API key is missing. Please set it in the .env file.")
 
 # --- Function to fetch weather data from OpenWeatherMap API ---
-# This function fetches the weather data from OpenWeatherMap API and returns the entire response.
 def get_weather_data():
     url = f"https://api.openweathermap.org/data/3.0/onecall"
     
@@ -69,7 +69,7 @@ def get_weather_data():
         data = response.json()
         return data  # Return the entire JSON response
     except Exception as e:
-        print(f"⚠️  Failed to get weather data: {e}")
+        logging.error(f"Failed to get weather data: {e}")
         return None  # Return None if the API call fails
 
 # --- Function to calculate glare window for today ---
@@ -192,16 +192,16 @@ def sun_evaluation():
 
     if should_close_shades(current_obs, glare_forecast):
         try:
-            logging.info("🔽 CLOSE SHADES → Triggering webhook ON")
+            logging.info("CLOSE SHADES -> Triggering webhook ON")
             requests.get(WEBHOOK_ON_URL, timeout=5)
         except Exception as e:
-            logging.error(f"⚠️ Webhook ON failed: {e}")
+            logging.error(f"Webhook ON failed: {e}")
     else:
         try:
-            logging.info("🔼 DO NOT CLOSE → Triggering webhook OFF")
+            logging.info("DO NOT CLOSE -> Triggering webhook OFF")
             requests.get(WEBHOOK_OFF_URL, timeout=5)
         except Exception as e:
-            logging.error(f"⚠️ Webhook OFF failed: {e}")
+            logging.error(f"Webhook OFF failed: {e}")
 
 
 # Main function to handle the loop or single execution
@@ -220,7 +220,7 @@ def main():
         # Run in a loop with the specified or default timeout
         while True:
             sun_evaluation()
-            print(f"⏳ Waiting for {args.t} seconds...")
+            logging.warning(f"Waiting for {args.t} seconds...")
             time.sleep(args.t)
     else:
         # Run once and exit
