@@ -1,5 +1,6 @@
 .env
-src/__pycache__/
 *.py[cod]
 .vscode/
+*.log
+__pycache__/
 
