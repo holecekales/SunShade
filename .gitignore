@@ -4,4 +4,6 @@
 *.log
 __pycache__/
 *_rotate.conf
+.cache/
+.venv/
 
