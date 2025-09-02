@@ -7,7 +7,7 @@ It uses OpenWeatherMap API to get weather forecast, and Homebridge Webhooks ([Ho
 
 ### 1. Clone the Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/holecekales/SunShade
 cd SunShade
 ```
 
