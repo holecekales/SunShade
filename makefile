@@ -33,13 +33,14 @@ endif
 
 # --- Targets ---
 install:  ## Create venv if it doesn't exist and install all dependencies
+	@if ! command -v pip3 >/dev/null 2>&1; then \
+        echo "pip3 is not installed on the system. Installing pip3..."; \
+        python3 -m ensurepip --upgrade || sudo apt-get install -y python3-pip; \
+    fi
 	@if [ ! -d "$(VENV)" ]; then \
 		python3 -m venv $(VENV); \
 	fi
 	$(PIP) install -r requirements.txt
-
-freeze:  ## Freeze current venv to requirements.txt
-	$(PIP) freeze > requirements.txt
 
 update:  ## Upgrade all packages to latest versions (safely)
 	@outdated=$$($(PIP) list --outdated --format=columns | awk 'NR>2 {print $$1}'); \
